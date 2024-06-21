@@ -11,6 +11,9 @@
 #define OLED_RESET -1
 Adafruit_SH1107 display = Adafruit_SH1107(64, 128, &Wire);
 
+unsigned long previousTime = 0;
+const unsigned long eventInterval=600000;   //600000 is 10 minutes
+
 const char * pop = "abcd1234"; // Proof of possession - otherwise called a PIN - string provided by the device, entered by the user in the phone app
 const char * service_name = "PROV_123"; // Name of your device (the Espressif apps expects by default device name starting with "Prov_")
 const char * service_key = NULL; // Password used for SofAP method (NULL = no password needed)
@@ -22,6 +25,7 @@ uint8_t uuid[16] = {0xb4, 0xdf, 0x5a, 0x1c, 0x3f, 0x6b, 0xf4, 0xbf,
 
 bool connected = false;
 String payload = "";
+
 
 void resetDisplay() {
   display.clearDisplay();
@@ -43,6 +47,7 @@ void SysProvEvent(arduino_event_t *sys_event){
         resetDisplay();
         display.println("\nDisconnected. Connecting to the AP again... ");
         display.display();
+        connected = false;
         break;
     case ARDUINO_EVENT_PROV_START:
         resetDisplay();
@@ -164,11 +169,15 @@ void setup() {
 }
  
 void loop() {
+  
   if(connected)
   {
-    display.clearDisplay();
-    readPrice(0,0, "PG");
-    delay(3000);
-    display.clearDisplay();
+    unsigned long currentTime = millis(); 
+
+    if (((currentTime - previousTime) >= eventInterval) || previousTime == 0)
+    {
+      readPrice(0,0, "PG");
+      previousTime = currentTime;
+    }
   }
 }
