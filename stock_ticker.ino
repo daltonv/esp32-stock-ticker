@@ -10,8 +10,8 @@
 #define OLED_RESET -1
 Adafruit_SH1107 display = Adafruit_SH1107(64, 128, &Wire);
  
-const char* ssid = "HalloHalloHallo";
-const char* password = "TestTestTestTestTest";
+const char* ssid = "";
+const char* password = "";
 String payload = "";
  
 void connectWiFi() {
