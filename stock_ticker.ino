@@ -119,10 +119,16 @@ void readPrice(int x, int y, const String& stockName) {
     display.println(" USD");
  
     display.setTextSize(1);
+
+    display.print("Last Close: ");
     display.print(differenceInPrice, 2);
     display.println("%");
+
+    display.print("Start Date: ");
     display.print(differenceSinceStart, 2);
     display.println("%");
+
+    display.print("Retire Date: ");
     display.print(differenceSinceRetire, 2);
     display.println("%");
  
