@@ -26,6 +26,8 @@ uint8_t uuid[16] = {0xb4, 0xdf, 0x5a, 0x1c, 0x3f, 0x6b, 0xf4, 0xbf,
 bool connected = false;
 String payload = "";
 
+const float START_DATE_PRICE = 6.62;
+const float RETIRE_DATE_PRICE = 166.85;
 
 void resetDisplay() {
   display.clearDisplay();
@@ -106,27 +108,22 @@ void readPrice(int x, int y, const String& stockName) {
     float previousClosePrice = doc["pc"];
     float currentPrice = doc["c"];
     float differenceInPrice = ((currentPrice - previousClosePrice) / previousClosePrice) * 100.0;
+    float differenceSinceStart = ((currentPrice - START_DATE_PRICE) / START_DATE_PRICE) * 100.0;
+    float differenceSinceRetire = ((currentPrice - RETIRE_DATE_PRICE) / RETIRE_DATE_PRICE) * 100.0;
  
     resetDisplay();
     display.setTextSize(2);
     display.setCursor(x, y);
-    display.print(stockName);
-    Serial.println(stockName);
- 
-    if (differenceInPrice < 0.0) {
-      display.setTextColor(SH110X_WHITE);
-    } else {
-      display.setTextColor(SH110X_WHITE);
-    }
- 
-    display.setTextSize(2);
-    display.setCursor(x, y + 25);
+    display.println(stockName);
     display.print(currentPrice, 2);
     display.println(" USD");
  
-    display.setTextSize(2);
-    display.setCursor(x, y + 50);
+    display.setTextSize(1);
     display.print(differenceInPrice, 2);
+    display.println("%");
+    display.print(differenceSinceStart, 2);
+    display.println("%");
+    display.print(differenceSinceRetire, 2);
     display.println("%");
  
     display.display();
@@ -135,6 +132,8 @@ void readPrice(int x, int y, const String& stockName) {
     display.setTextSize(1);
     display.setCursor(0, 0);
     display.println("Error in HTTP request");
+    display.print("Error code: ");
+    display.println(httpCode);
     display.display();
   }
  
