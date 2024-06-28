@@ -12,7 +12,7 @@
 Adafruit_SH1107 display = Adafruit_SH1107(64, 128, &Wire);
 
 unsigned long previousTime = 0;
-const unsigned long eventInterval=600000;   //600000 is 10 minutes
+const unsigned long eventInterval=50000;   //600000 is 10 minutes
 
 const char * pop = "abcd1234"; // Proof of possession - otherwise called a PIN - string provided by the device, entered by the user in the phone app
 const char * service_name = "PROV_123"; // Name of your device (the Espressif apps expects by default device name starting with "Prov_")
@@ -26,6 +26,9 @@ uint8_t uuid[16] = {0xb4, 0xdf, 0x5a, 0x1c, 0x3f, 0x6b, 0xf4, 0xbf,
 bool connected = false;
 String payload = "";
 
+const char* ssid = YOUR_SSID_HERE;
+const char* password = YOUR_PASSWORD_HERE;
+
 const float START_DATE_PRICE = 6.62;
 const float RETIRE_DATE_PRICE = 166.85;
 
@@ -34,6 +37,9 @@ void resetDisplay() {
   display.setTextColor(SH110X_WHITE);
   display.setCursor(0, 0);
 }
+
+HTTPClient http;
+
 
 // WARNING: SysProvEvent is called from a separate FreeRTOS task (thread)!
 void SysProvEvent(arduino_event_t *sys_event){
@@ -90,13 +96,31 @@ void SysProvEvent(arduino_event_t *sys_event){
         break;
     }
 }
+
+void connectWiFi() {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(SH110X_WHITE);
+  display.setCursor(0, 0);
+  Serial.println("Connecting to WiFi...");
+  display.display();
  
-void readPrice(int x, int y, const String& stockName) {
-  String httpRequestAddress = "https://finnhub.io/api/v1/quote?symbol=" + stockName + "&token=c1tjb52ad3ia4h4uee9g";
-  HTTPClient http;
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+  }
+ 
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  Serial.println("Connected to WiFi");
+  display.display();
+  delay(2000);
+}
+ 
+void readPrice(int x, int y) {
+  
   int httpCode;
- 
-  http.begin(httpRequestAddress);
+
   httpCode = http.GET();
  
   if (httpCode > 0) {
@@ -114,7 +138,7 @@ void readPrice(int x, int y, const String& stockName) {
     resetDisplay();
     display.setTextSize(2);
     display.setCursor(x, y);
-    display.println(stockName);
+    display.println("PG");
     display.print(currentPrice, 2);
     display.println(" USD");
  
@@ -142,8 +166,6 @@ void readPrice(int x, int y, const String& stockName) {
     display.println(httpCode);
     display.display();
   }
- 
-  http.end();
 }
  
 void setup() {
@@ -160,29 +182,28 @@ void setup() {
   display.setCursor(0, 0);
   Serial.println("Stock Prices Tracker");
   display.display();
- 
-  // connectWiFi();
-  WiFi.onEvent(SysProvEvent);
 
-  Serial.println("Begin Provisioning using BLE");
-  WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, WIFI_PROV_SECURITY_1, pop, service_name, service_key, uuid, reset_provisioned);
-  log_d("ble qr");
-  WiFiProv.printQR(service_name, pop, "ble");
+  connectWiFi();
 
-  display.println("To provision Wifi connect serial monitor");
-  display.display();
+  String httpRequestAddress = "https://finnhub.io/api/v1/quote?symbol=PG&token=c1tjb52ad3ia4h4uee9g";
+  http.begin(httpRequestAddress);
+  // WiFi.onEvent(SysProvEvent);
+
+  // Serial.println("Begin Provisioning using BLE");
+  // WiFiProv.beginProvision(WIFI_PROV_SCHEME_BLE, WIFI_PROV_SCHEME_HANDLER_FREE_BTDM, WIFI_PROV_SECURITY_1, pop, service_name, service_key, uuid, reset_provisioned);
+  // log_d("ble qr");
+  // WiFiProv.printQR(service_name, pop, "ble");
+
+  // display.println("To provision Wifi connect serial monitor");
+  // display.display();
 }
  
 void loop() {
-  
-  if(connected)
-  {
-    unsigned long currentTime = millis(); 
+  unsigned long currentTime = millis(); 
 
-    if (((currentTime - previousTime) >= eventInterval) || previousTime == 0)
-    {
-      readPrice(0,0, "PG");
-      previousTime = currentTime;
-    }
+  if (((currentTime - previousTime) >= eventInterval) || previousTime == 0)
+  {
+    readPrice(0,0);
+    previousTime = currentTime;
   }
 }
